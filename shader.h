@@ -9,11 +9,8 @@
 #ifndef octree_shader_h
 #define octree_shader_h
 
-#define GLFW_INCLUDE_GL3 
-#include <GL/glfw.h>
-
+#include <QtOpenGL>
 #include <string>
-
 
 struct glsl_shader
 {
@@ -25,9 +22,7 @@ struct glsl_shader
         
 private:
     
-    void add_shader( const char* pShaderText, GLenum ShaderType ); 
-    
-    
+    void add_shader( const char* pShaderText, GLenum ShaderType );    
 };
 
 #endif

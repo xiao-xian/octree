@@ -21,7 +21,6 @@
 
 #include <math.h>
 
-
 #include "data_structure.h"
 #include "mesh.h"
 
@@ -100,6 +99,7 @@ template< typename T > struct octree_level
     void addCube( T x, T y, T z, T i_scale  );
     
     void initBuffer();
+    void setTansform( Matrix4X4 &i_model, Matrix4X4 &i_view, Matrix4X4 &i_project );
     void draw();
     
     std::vector< T >        vertices;
@@ -107,6 +107,7 @@ template< typename T > struct octree_level
     
     std::vector< GLuint  >  face_index;
 
+private:
     std::tr1::shared_ptr< glsl_shader >  phong_shader;
     
     GLuint                  vertex_buffer;
@@ -127,8 +128,5 @@ template< typename T > struct octree_render
     LevelMap levels;
         
 };
-
-
-
 
 #endif

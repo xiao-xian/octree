@@ -129,12 +129,79 @@ GLfloat cube_normal[ 108 ] =
 
 template< typename T > 
 void Octree<T>::top_down_build( int level, int parent_id)
-{   
-    //  TODO:This is simpler to implement than "bottom_up"..
+{
+    if( !level && !parent_id )
+    {
+        // root
+        nodes.push_back( Node<T>() );
+        
+        nodes[ parent_id ].vertIds.resize( mesh.m_vertices.size() );
+        
+        for( int i = 0, num = mesh.m_vertices.size(); i < num; i++ )
+        {
+            nodes[ parent_id ].vertIds[ i ] = i;
+        }
+    }
+    
+    if( !nodes[ parent_id ].vertIds.size() )
+    {
+        // parent node doesn't have any points
+        return;
+    }
+    
+    if(  nodes[ parent_id ].level >= ( leaf_layer  ))
+    {
+        return;
+    }
+    
+    T quad_size = pow( T(2.), T( leaf_layer - 2 - level ) ) * step;
+    
+    // Add 8 children and update their center coordinates
+    for( int i = 0; i < 2; i++ ){
+        for( int j = 0; j < 2; j++){
+            for( int k = 0; k < 2; k++){
+                
+                nodes[ parent_id ].child[i][j][k] = static_cast<int>(nodes.size() );
+                nodes.push_back( Node<T>());
+                nodes[ nodes[ parent_id ].child[i][j][k] ].x = nodes[parent_id].x 
+                + pow( T(-1), T(i) ) * quad_size;
+                nodes[ nodes[ parent_id ].child[i][j][k] ].y = nodes[parent_id].y
+                + pow( T(-1), T(j) ) * quad_size;
+                nodes[ nodes[ parent_id ].child[i][j][k] ].z = nodes[parent_id].z 
+                + pow( T(-1), T(k) ) * quad_size;
+                
+                nodes[ nodes[ parent_id ].child[i][j][k] ].level = level + 1 ;
+            }
+        }
+    }
+    
+    //assign vertex ids to childern...
+    for( int i=0, num = nodes[ parent_id ].vertIds.size(); 
+        i < num; i++ )
+    {
+        int vertId = nodes[ parent_id ].vertIds[ i ];
+        
+        int chx = ( mesh.m_vertices[ vertId ].x > nodes[ parent_id ].x ? 0 : 1 );
+        int chy = ( mesh.m_vertices[ vertId ].y > nodes[ parent_id ].y ? 0 : 1 );
+        int chz = ( mesh.m_vertices[ vertId ].z > nodes[ parent_id ].z ? 0 : 1 );
+        
+        int child_id = nodes[ parent_id ].child[chx][chy][chz];
+        
+        nodes[ child_id ].vertIds.push_back( vertId );
+    }
+    
+    // recursively call subdive for all children
+    for( int i = 0; i < 2; i++ ){
+        for( int j = 0; j < 2; j++){
+            for( int k = 0; k < 2; k++){
+                int child_id = nodes[ parent_id ].child[i][j][k];
+                top_down_build(  level + 1, child_id );
+            }
+        }
+    }
     
     return;
-} 
-
+} // end of subdived
 
 template <typename T >
 void Octree<T>::bottom_up_build()
@@ -159,7 +226,7 @@ void Octree<T>::bottom_up_build()
     typedef std::map<uint64_t, boost::tuple<T, T, T, int > > NonLeafMap; 
     NonLeafMap non_leaf_map;
     
-    // build non-leaf map : morton code -> [ center coord & level ] 
+    // build non-leaf node 
     for( std::map< uint64_t, Int3 >::iterator it= mortcode.begin();
         it != mortcode.end(); it++ )
     {
@@ -223,7 +290,7 @@ template< typename T > void octree_level<T>::addCube(T x, T y, T z, T i_scale)
 
 template< typename T > void octree_level<T>::initBuffer()
 {       
-    std::string path = "../../shader/phong";
+    std::string path = "../../../../octree/shader/phong";
     phong_shader->init(path);
     
     if( vertices.size() && normals.size() && face_index.size() )
@@ -254,6 +321,13 @@ template< typename T > void octree_level<T>::initBuffer()
         
         glBindVertexArray( 0 );
     }
+}
+
+template< typename T > void octree_level<T>::setTansform( Matrix4X4 &i_model, Matrix4X4 &i_view, Matrix4X4 &i_project )
+{
+    model = i_model;
+    view = i_view;
+    project = i_project;
 }
 
 template< typename T > void octree_level<T>::draw()
@@ -325,5 +399,4 @@ template< typename T > octree_render<T>::octree_render( Octree< T >& octree )
 template class Octree< float >;
 template struct octree_level< float >;
 template struct octree_render< float >;
-
 

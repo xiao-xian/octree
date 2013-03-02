@@ -49,8 +49,7 @@ bool load_obj( const char *i_path, Mesh< float > &i_mesh )
         else 
         {
             
-        }
-         
+        }      
     }
     
     return true;
@@ -99,7 +98,7 @@ WorldSpace::init()
 {
     if( !initialized )
     {
-        std::string path = "../../shader/phong";
+        std::string path = "../../../../octree/shader/phong";
         phong_shader->init(path);
         
         // vertex
@@ -147,6 +146,37 @@ WorldSpace::draw()
         glBindVertexArray( vao_id );
         glDrawArrays(GL_LINES, 0,  plane.size() / 3 );
         
+#if 0 
+        {
+            color[0] = 1.; color[1] = 0; color[2] = 0;
+            glUniform3f(glGetUniformLocation(phong_shader->program_id, "vertex_color"), color[0], color[1], color[2] );
+            glBindVertexArray( vao_id );
+            glDrawArrays(GL_LINES, 0,  2 );
+        }
+        
+        {
+            color[0] = 0; color[1] = 1.; color[2] = 0;
+            Matrix4X4 ymat = model;
+            set_rotation_matrix(ymat, 90., 2 );
+            glUseProgram( phong_shader->program_id );
+            glUniformMatrix4fv( glGetUniformLocation( phong_shader->program_id, "modelMatrix"), 1, false, ymat.get() );
+            glUniform3f(glGetUniformLocation(phong_shader->program_id, "vertex_color"), color[0], color[1], color[2] );
+            glDrawArrays(GL_LINES, 0, 2 );
+        }
+        
+        {
+            color[0] = 0; color[1] = 0.; color[2] = 1;
+            Matrix4X4 zmat = model;
+            set_rotation_matrix(zmat, 90., 1 );
+            glUseProgram( phong_shader->program_id );
+            glUniformMatrix4fv( glGetUniformLocation( phong_shader->program_id, "modelMatrix"), 1, false, zmat.get() );
+            glUniform3f(glGetUniformLocation(phong_shader->program_id, "vertex_color"), color[0], color[1], color[2] );
+            glDrawArrays(GL_LINES, 0, 2 );
+        }
+        
+#endif  
+
+
     }
 
 }

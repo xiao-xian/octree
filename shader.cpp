@@ -7,6 +7,7 @@
 //
 
 #include "shader.h"
+//
 
 #include <iostream>
 #include <fstream>
@@ -105,4 +106,3 @@ void glsl_shader::add_shader(const char* pShaderText, GLenum ShaderType )
     
     glAttachShader(program_id, ShaderObj);
 }
-

@@ -10,7 +10,7 @@ out vec4 outputF;
 
 const vec4 diffuse_color = vec4( 0.4, 0.4, 0.4, 1.0);
 const vec4 ambient_color = vec4( 0.0, 0.0, 0.0, 1.0 );
-const vec4 specular_color = vec4( 0.8, 0.8, 0.8, 1.0);
+const vec4 specular_color = vec4( 1.0, 1.0, 1.0, 1.0);
 
 void main(void)                                                             
 {                                                                           

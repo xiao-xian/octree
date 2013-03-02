@@ -7,7 +7,7 @@ uniform mat4 projMatrix;
 uniform vec3 vertex_color;
 
 //hard coded for the moment
-vec4 light_pos = vec4(0.0, 0.8, 0.5, 1.0);
+vec4 light_pos = vec4(0.3, 0.3, 0.0, 1.0);
 
 //vec3 light_pos = vec3(0.0, 0.0, 0.0);
 
