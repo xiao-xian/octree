@@ -1,5 +1,10 @@
 Octree Experimenting:
 ======
+Dependences:
+
+Qt5, Boost, OpenGL3.2, GLSL1.5
+
+Things:
 
 1. Read obj polygon mesh 
 
