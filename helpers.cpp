@@ -57,7 +57,6 @@ bool load_obj( const char *i_path, Mesh< float > &i_mesh )
         }
         else if ( strcmp( lineHeader, "f" ) == 0 )
         {
-#if 0
             unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
             int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
 
@@ -71,7 +70,6 @@ bool load_obj( const char *i_path, Mesh< float > &i_mesh )
             i_mesh.m_triangleIds.push_back( id1 );
             i_mesh.m_triangleIds.push_back( id2 );
             i_mesh.m_triangleIds.push_back( id3 );
-#endif
         }
         else 
         {
