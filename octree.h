@@ -38,7 +38,8 @@ public:
     T                   x, y, z;            // center position
     int                 level;              // tree level
     std::vector< int >  vertIds;            // vertex index into a mesh
-    T                   value;
+    T                   size;               // node( cube ) size
+    T                   value;              // function value
 };
 
 template< typename T > class Octree
@@ -53,8 +54,10 @@ public:
     ~Octree(){}
     
     void top_down_build( int level, int parent_id = 0 );
-    
     void bottom_up_build();
+
+    //prototype
+    void bbox_build();
     
     uint64_t morton_encode(uint64_t x, uint64_t y, uint64_t z)
     {

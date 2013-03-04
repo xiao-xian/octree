@@ -25,7 +25,8 @@ HEADERS  += mainwindow.h \
     data_structure.h \
     shader.h \
     mesh.h \
-    helpers.h
+    helpers.h \
+    unitcube.h
 
 
 #INCLUDEPATH += $$PWD/../../../../../../opt/local/include/boost

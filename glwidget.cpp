@@ -39,12 +39,19 @@ void glwidget::initializeGL()
     glClearColor(0.2,0.2,0.2,1.0);
 
     Mesh< float > mesh;
+    //load_obj("../../../../octree/obj/bigTri.obj", mesh );
+
     load_obj("../../../../octree/obj/bunny_l.obj", mesh );
+
+    cout<<" mesh bounding box min "<<mesh.bbox_min<<" max "<<mesh.bbox_max<<endl;
 
     float voxel_size = 0.005;
     Octree< float > octree( MAX_LEVEL, mesh, voxel_size);
 
-    octree.top_down_build( 0, 0 );
+    //octree.top_down_build( 0, 0 );
+    octree.bottom_up_build();
+    //octree.bbox_build();
+
     _render = std::tr1::shared_ptr< octree_render<float> >( new octree_render<float>( octree ) );
 
     Matrix4X4 identity;
@@ -64,6 +71,7 @@ void glwidget::initializeGL()
 
 void glwidget::paintGL()
 {
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPushAttrib(GL_ALL_ATTRIB_BITS);
 

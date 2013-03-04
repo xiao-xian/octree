@@ -7,6 +7,7 @@
 //
 
 #include "octree.h"
+#include "unitcube.h"
 
 using namespace std;
 
@@ -212,6 +213,10 @@ void Octree<T>::bottom_up_build()
     // leaf node for each mesh vertex
     for( int i = 0; i < num; i++)
     {
+        // TODO: the voxel coordinates shall be always positive, otherwise the motion code
+        // might be wrong, but for the moment all objects are relatively small, so 64bit is
+        // good enough...
+
         int ci =  static_cast< int >( mesh.m_vertices[ i ].x / step );
         int cj =  static_cast< int >( mesh.m_vertices[ i ].y / step );
         int ck =  static_cast< int >( mesh.m_vertices[ i ].z / step );
@@ -223,53 +228,160 @@ void Octree<T>::bottom_up_build()
         mortcode.insert( std::make_pair( mc, coords ) );
     }
     
-    typedef std::map<uint64_t, boost::tuple<T, T, T, int > > NonLeafMap; 
-    NonLeafMap non_leaf_map;
-    
+    // level map: indexed by motorn code, and the center coordinates
+    typedef std::map<uint64_t, boost::tuple<T, T, T > > NonLeafMap;
+
+    // array of levels for all non-leaf nodes:
+    std::vector< NonLeafMap > non_leaf_map( leaf_layer , NonLeafMap() );
+
     // build non-leaf node 
     for( std::map< uint64_t, Int3 >::iterator it= mortcode.begin();
         it != mortcode.end(); it++ )
     {
+        // start from leaf node:
         T x = step * T( it->second.i ) + 0.5 * step ;
         T y = step * T( it->second.j ) + 0.5 * step ;
         T z = step * T( it->second.k ) + 0.5 * step ;
         
+        // each vertex represents a leaf node
         nodes.push_back( Node<T>( x, y, z) );
         nodes[ nodes.size() - 1 ].level = leaf_layer;
         
         //dummy one
         nodes[ nodes.size() - 1  ].vertIds.push_back( 0 );
         
-        // 
+        // leaf morton code
         uint64_t mc = it->first;
         
-        for( int l = leaf_layer - 1; l > 0; l-- )
+        // work out the morton code for each non-leaf level
+        for( int l = leaf_layer - 1; l >= 0; l-- )
         {
-            uint64_t local = mc & 0x7;
+            // the 3 least bits:
+            unsigned char local = mc & 0x7;
+
+            // shift to left to get parent's level of the code
             mc = ( mc >> 3 );
            
+            // work out the voxel size
             T quad_size = pow( T(2.), T( leaf_layer - l -2 ) ) * step;
             
+            // work out the center position
             x += pow( -1, ( (          local & 0x1 ) % 2 )) * quad_size;
             y += pow( -1, ( ( ( local >> 1 ) & 0x1 ) % 2 )) * quad_size;
             z += pow( -1, ( ( ( local >> 2 ) & 0x1 ) % 2 )) * quad_size;
             
-            non_leaf_map.insert( std::make_pair( mc, boost::tuple< T,T,T, int >(x,y,z, l) ) );
+            // thanks to std::map, same morton code won't be added
+            non_leaf_map[ l ].insert( std::make_pair( mc, boost::tuple< T,T,T  >(x,y,z) ) );
         }
                              
     }
     
-    for( typename std::map< uint64_t, boost::tuple<T, T, T, int> >::iterator iter = non_leaf_map.begin(); 
-        iter != non_leaf_map.end(); ++iter )
+    // add all non-leaf nodes to the octree:
+    for( int l = leaf_layer - 1; l >= 0; l-- )
     {
-        T x = boost::get<0>( iter->second );
-        T y = boost::get<1>( iter->second );
-        T z = boost::get<2>( iter->second );
-        
-        nodes.push_back( Node<T>( x, y, z) );
-        nodes[ nodes.size() - 1 ].level = boost::get<3>( iter->second ) ;
-        nodes[ nodes.size() - 1 ].vertIds.push_back( 0 );
+        NonLeafMap &oct_layer = non_leaf_map[ l ];
+
+        for( typename std::map< uint64_t, boost::tuple<T, T, T > >::iterator iter = oct_layer.begin();
+             iter != oct_layer.end(); ++iter )
+        {
+            T x = boost::get<0>( iter->second );
+            T y = boost::get<1>( iter->second );
+            T z = boost::get<2>( iter->second );
+
+            nodes.push_back( Node<T>( x, y, z) );
+            nodes[ nodes.size() - 1 ].level = l ;
+            nodes[ nodes.size() - 1 ].vertIds.push_back( 0 );
+        }
     }
+}
+
+template< typename T>
+void Octree<T>::bbox_build()
+{
+    const int numf = mesh.m_triangleIds.size() / 3;
+    cout<<" number of triangles: "<<numf<<endl;
+
+    for( int i = 0; i < numf; i++ )
+    {
+        // bounding box for each triangle face:
+        Vertex<T> bbMin( std::numeric_limits<T>::max()), bbMax( -std::numeric_limits<T>::max() );
+        Triangle3 face;
+
+        for( int j = 0; j < 3; j++ )
+        {
+            Vertex<T> v = mesh.m_vertices[ mesh.m_triangleIds[ 3 * i + j ] ];
+
+            if( j == 0 ) face.v1 = v;
+            if( j == 1 ) face.v2 = v;
+            if( j == 2 ) face.v3 = v;
+
+            bbMin.x = ( v.x < bbMin.x ? v.x : bbMin.x );
+            bbMin.y = ( v.y < bbMin.y ? v.y : bbMin.y );
+            bbMin.z = ( v.z < bbMin.z ? v.z : bbMin.z );
+            bbMax.x = ( v.x > bbMax.x ? v.x : bbMax.x );
+            bbMax.y = ( v.y > bbMax.y ? v.y : bbMax.y );
+            bbMax.z = ( v.z > bbMax.z ? v.z : bbMax.z );
+
+        }
+
+#if 0
+        //adjust bbox a bit to avoid numerical issues
+        bbMin.x -= ( step/2. );
+        bbMin.y -= ( step/2. );
+        bbMin.z -= ( step/2. );
+
+        bbMax.x += ( step/2. );
+        bbMax.y += ( step/2. );
+        bbMax.z += ( step/2. );
+#endif
+
+        int mini =  static_cast< int >( bbMin.x / step );
+        int minj =  static_cast< int >( bbMin.y / step );
+        int mink =  static_cast< int >( bbMin.z / step );
+
+        int maxi =  static_cast< int >( bbMax.x / step );
+        int maxj =  static_cast< int >( bbMax.y / step );
+        int maxk =  static_cast< int >( bbMax.z / step );
+
+        const float scale = 1./step;
+
+        //cout<<" face "<<i<<" has bounding box : "<<bbMin<<" "<<bbMax<<endl;
+
+        for( int i = mini; i <= maxi; i++ )
+        {
+            for( int j = minj; j <= maxj; j++ )
+            {
+                for( int k = mink; k <= maxk; k++ )
+                {
+                    const T x = step * T( i ) + 0.5 * step ;
+                    const T y = step * T( j ) + 0.5 * step ;
+                    const T z = step * T( k ) + 0.5 * step ;
+
+                    // translate the triangle so the cube is positioned to origin.
+
+                    Triangle3 tri; tri.v1 = face.v1; tri.v2 = face.v2; tri.v3 = face.v3;
+                    tri.v1.translateBy( -x, -y, -z );
+                    tri.v2.translateBy( -x, -y, -z );
+                    tri.v3.translateBy( -x, -y, -z );
+
+                    tri.v1.scaleTo( scale );
+                    tri.v2.scaleTo( scale );
+                    tri.v3.scaleTo( scale );
+
+                    bool inside = ( unitCube::t_c_intersection( tri ) == INSIDE );
+                    if( inside )
+                    {
+                        nodes.push_back( Node<T>( x, y, z) );
+                        nodes[ nodes.size() - 1 ].level = leaf_layer;
+
+                        //dummy one
+                        nodes[ nodes.size() - 1  ].vertIds.push_back( 0 );
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 template< typename T > void octree_level<T>::addCube(T x, T y, T z, T i_scale)

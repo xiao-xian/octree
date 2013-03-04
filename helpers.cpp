@@ -36,7 +36,16 @@ bool load_obj( const char *i_path, Mesh< float > &i_mesh )
             float x, y, z; 
             fscanf(file, "%f %f %f\n", &x, &y, &z );
             Vertex< float > v( x, y, z );
+
             i_mesh.m_vertices.push_back( v );
+
+            i_mesh.bbox_min.x = ( v.x < i_mesh.bbox_min.x ? v.x : i_mesh.bbox_min.x );
+            i_mesh.bbox_min.y = ( v.y < i_mesh.bbox_min.y ? v.y : i_mesh.bbox_min.y );
+            i_mesh.bbox_min.z = ( v.z < i_mesh.bbox_min.z ? v.z : i_mesh.bbox_min.z );
+            i_mesh.bbox_max.x = ( v.x > i_mesh.bbox_max.x ? v.x : i_mesh.bbox_max.x );
+            i_mesh.bbox_max.y = ( v.y > i_mesh.bbox_max.y ? v.y : i_mesh.bbox_max.y );
+            i_mesh.bbox_max.z = ( v.z > i_mesh.bbox_max.z ? v.z : i_mesh.bbox_max.z );
+
         }
         else if( strcmp( lineHeader, "vn" ) == 0 )
         {
@@ -44,10 +53,29 @@ bool load_obj( const char *i_path, Mesh< float > &i_mesh )
             fscanf(file, "%f %f %f\n", &x, &y, &z );
             //Vertex<float> v( x, y, z );
             i_mesh.m_normals.push_back( Vertex<float>( x, y, z ) );
-            // TODO: for the rest of entries, we skip...
+
+        }
+        else if ( strcmp( lineHeader, "f" ) == 0 )
+        {
+#if 0
+            unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+            int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
+
+            if (matches != 9)
+            {
+                printf("File can't be read by our simple parser :-( Try exporting with other options\n");
+                continue;
+            }
+
+            unsigned int id1 = ( vertexIndex[0]- 1), id2 = ( vertexIndex[1] - 1 ), id3 = ( vertexIndex[ 2 ] -1 );
+            i_mesh.m_triangleIds.push_back( id1 );
+            i_mesh.m_triangleIds.push_back( id2 );
+            i_mesh.m_triangleIds.push_back( id3 );
+#endif
         }
         else 
         {
+            // TODO: for the rest of entries, we skip...
             
         }      
     }
