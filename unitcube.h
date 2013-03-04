@@ -1,3 +1,11 @@
+/*
+ * Triangle-Unit Cube intersection code from:
+ *  http://tog.acm.org/resources/GraphicsGems/gemsiii/triangleCube.c
+ *
+ *  some numerical issues ... Too sensitive
+ */
+
+
 #ifndef UNITCUBE_H
 #define UNITCUBE_H
 
